@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Item;
+use App\Models\StockLog;
 use Illuminate\Http\Request;
 
 class ItemController extends Controller
@@ -24,7 +25,16 @@ class ItemController extends Controller
         ]);
     
         $item = Item::create($validated);
-        return response()->json(['status' => 'success', 'message' => 'Barang berhasil ditambah', 'data' => $item], 201);
+    
+        // Otomatis catat log barang masuk pertama kali
+        StockLog::create([
+            'item_id' => $item->id,
+            'type' => 'in',
+            'amount' => $item->stock,
+            'description' => 'Stok awal barang baru'
+        ]);
+    
+        return response()->json(['status' => 'success', 'data' => $item], 201);
     }
 
     public function show(string $id)
