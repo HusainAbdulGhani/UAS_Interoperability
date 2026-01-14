@@ -37,14 +37,14 @@ class ItemController extends Controller
         return response()->json(['status' => 'success', 'data' => $item], 201);
     }
 
-    public function show(string $id)
-    {
+    public function show($id) {
         $item = Item::with('category')->find($id);
-
         if (!$item) {
-            return response()->json(['status' => 'error', 'message' => 'Barang tidak ditemukan'], 404);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Barang dengan ID ' . $id . ' tidak ditemukan di gudang.'
+            ], 404);
         }
-
         return response()->json(['status' => 'success', 'data' => $item]);
     }
 
