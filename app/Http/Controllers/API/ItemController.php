@@ -9,12 +9,20 @@ use Illuminate\Http\Request;
 
 class ItemController extends Controller
 {
+    /**
+     * Menampilkan semua data barang beserta kategorinya.
+     */
     public function index() {
-        // Mengambil data barang beserta nama kategorinya
         $items = Item::with('category')->get();
-        return response()->json(['status' => 'success', 'data' => $items]);
+        return response()->json([
+            'status' => 'success',
+            'data' => $items
+        ]);
     }
 
+    /**
+     * Menyimpan barang baru dan mencatat log stok awal.
+     */
     public function store(Request $request) {
         $validated = $request->validate([
             'category_id' => 'required|exists:categories,id',
@@ -34,9 +42,20 @@ class ItemController extends Controller
             'description' => 'Stok awal barang baru'
         ]);
     
+<<<<<<< HEAD
         return response()->json(['status' => 'success', 'message' => 'Barang berhasil ditambahkan', 'data' => $item], 201);
+=======
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Barang berhasil ditambahkan',
+            'data' => $item
+        ], 201);
+>>>>>>> origin/main
     }
 
+    /**
+     * Menampilkan detail satu barang.
+     */
     public function show($id) {
         $item = Item::with('category')->find($id);
         if (!$item) {
@@ -45,15 +64,24 @@ class ItemController extends Controller
                 'message' => 'Barang dengan ID ' . $id . ' tidak ditemukan.'
             ], 404);
         }
-        return response()->json(['status' => 'success', 'data' => $item]);
+        return response()->json([
+            'status' => 'success', 
+            'data' => $item
+        ]);
     }
 
+    /**
+     * Memperbarui data barang dan mencatat log jika stok berubah.
+     */
     public function update(Request $request, string $id)
     {
         $item = Item::find($id);
 
         if (!$item) {
-            return response()->json(['status' => 'error', 'message' => 'Barang tidak ditemukan'], 404);
+            return response()->json([
+                'status' => 'error', 
+                'message' => 'Barang tidak ditemukan'
+            ], 404);
         }
 
         $validated = $request->validate([
@@ -64,16 +92,26 @@ class ItemController extends Controller
             'location' => 'string'
         ]);
 
+<<<<<<< HEAD
         // SIMPAN STOK LAMA UNTUK PERHITUNGAN LOG
         $oldStock = $item->stock;
 
         $item->update($validated);
 
         //  CATAT BARANG MASUK / KELUAR
+=======
+        // Hitung selisih stok sebelum update dilakukan
+        $oldStock = $item->stock;
+        
+        $item->update($validated);
+
+        // LOGIKA RIWAYAT STOK: Jika nilai stok berubah, buat catatan log otomatis
+>>>>>>> origin/main
         if (isset($validated['stock']) && $oldStock != $item->stock) {
             $diff = $item->stock - $oldStock;
             StockLog::create([
                 'item_id' => $item->id,
+<<<<<<< HEAD
                 'type' => $diff > 0 ? 'in' : 'out',
                 'amount' => abs($diff),
                 'description' => 'Perubahan stok melalui update data'
@@ -81,14 +119,33 @@ class ItemController extends Controller
         }
 
         return response()->json(['status' => 'success', 'message' => 'Barang berhasil diperbarui', 'data' => $item]);
+=======
+                'type' => $diff > 0 ? 'in' : 'out', // 'in' jika bertambah, 'out' jika berkurang
+                'amount' => abs($diff),
+                'description' => 'Perubahan stok melalui update data barang'
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'success', 
+            'message' => 'Barang berhasil diperbarui', 
+            'data' => $item
+        ]);
+>>>>>>> origin/main
     }
 
+    /**
+     * Menghapus barang dari database.
+     */
     public function destroy(string $id)
     {
         $item = Item::find($id);
     
         if (!$item) {
-            return response()->json(['status' => 'error', 'message' => 'Barang tidak ditemukan'], 404);
+            return response()->json([
+                'status' => 'error', 
+                'message' => 'Barang tidak ditemukan'
+            ], 404);
         }
     
         // CATAT LOG TERAKHIR SEBELUM DIHAPUS
@@ -100,7 +157,15 @@ class ItemController extends Controller
         ]);
     
         $item->delete();
+<<<<<<< HEAD
     
         return response()->json(['status' => 'success', 'message' => 'Barang berhasil dihapus dan riwayat dicatat']);
+=======
+
+        return response()->json([
+            'status' => 'success', 
+            'message' => 'Barang berhasil dihapus'
+        ]);
+>>>>>>> origin/main
     }
 }
