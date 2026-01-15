@@ -13,4 +13,7 @@ public function items() {
     return $this->hasMany(Item::class);
 
 }
+public function stocklogs(){
+    return $this->hasMany(StockLog::class);
+}
 }
