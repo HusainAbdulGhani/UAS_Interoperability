@@ -42,15 +42,11 @@ class ItemController extends Controller
             'description' => 'Stok awal barang baru'
         ]);
     
-<<<<<<< HEAD
-        return response()->json(['status' => 'success', 'message' => 'Barang berhasil ditambahkan', 'data' => $item], 201);
-=======
         return response()->json([
             'status' => 'success',
             'message' => 'Barang berhasil ditambahkan',
             'data' => $item
         ], 201);
->>>>>>> origin/main
     }
 
     /**
@@ -92,37 +88,19 @@ class ItemController extends Controller
             'location' => 'string'
         ]);
 
-<<<<<<< HEAD
-        // SIMPAN STOK LAMA UNTUK PERHITUNGAN LOG
+        // Simpan stok lama untuk perhitungan log
         $oldStock = $item->stock;
 
-        $item->update($validated);
-
-        //  CATAT BARANG MASUK / KELUAR
-=======
-        // Hitung selisih stok sebelum update dilakukan
-        $oldStock = $item->stock;
-        
         $item->update($validated);
 
         // LOGIKA RIWAYAT STOK: Jika nilai stok berubah, buat catatan log otomatis
->>>>>>> origin/main
         if (isset($validated['stock']) && $oldStock != $item->stock) {
             $diff = $item->stock - $oldStock;
             StockLog::create([
                 'item_id' => $item->id,
-<<<<<<< HEAD
                 'type' => $diff > 0 ? 'in' : 'out',
                 'amount' => abs($diff),
                 'description' => 'Perubahan stok melalui update data'
-            ]);
-        }
-
-        return response()->json(['status' => 'success', 'message' => 'Barang berhasil diperbarui', 'data' => $item]);
-=======
-                'type' => $diff > 0 ? 'in' : 'out', // 'in' jika bertambah, 'out' jika berkurang
-                'amount' => abs($diff),
-                'description' => 'Perubahan stok melalui update data barang'
             ]);
         }
 
@@ -131,11 +109,10 @@ class ItemController extends Controller
             'message' => 'Barang berhasil diperbarui', 
             'data' => $item
         ]);
->>>>>>> origin/main
     }
 
     /**
-     * Menghapus barang dari database.
+     * Menghapus barang dari database (Soft Delete) dan mencatat riwayat terakhir.
      */
     public function destroy(string $id)
     {
@@ -148,7 +125,7 @@ class ItemController extends Controller
             ], 404);
         }
     
-        // CATAT LOG TERAKHIR SEBELUM DIHAPUS
+        // CATAT LOG TERAKHIR SEBELUM DIHAPUS (Audit Trail)
         StockLog::create([
             'item_id' => $item->id,
             'type' => 'out',
@@ -157,15 +134,10 @@ class ItemController extends Controller
         ]);
     
         $item->delete();
-<<<<<<< HEAD
-    
-        return response()->json(['status' => 'success', 'message' => 'Barang berhasil dihapus dan riwayat dicatat']);
-=======
 
         return response()->json([
             'status' => 'success', 
-            'message' => 'Barang berhasil dihapus'
+            'message' => 'Barang berhasil dihapus dan riwayat dicatat'
         ]);
->>>>>>> origin/main
     }
 }
