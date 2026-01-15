@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('item_id')->constrained();
             $table->enum('type', ['in', 'out']); // Tipe transaksi
             $table->integer('amount');
+            $table->string('description')->nullabel();
             $table->timestamps();
         });
     }

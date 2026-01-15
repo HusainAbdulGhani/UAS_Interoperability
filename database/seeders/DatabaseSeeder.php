@@ -22,11 +22,11 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('password'),
         ]);
 
-        // 2. Buat Data Kategori Dummy
+        // 2.Data Kategori Dummy
         $elektronik = Category::create(['name' => 'Elektronik']);
         $furniture = Category::create(['name' => 'Furniture']);
 
-        // 3. Buat Data Barang Dummy
+        // 3.Data Barang Dummy
         Item::create([
             'category_id' => $elektronik->id,
             'item_code' => 'BRG-001',

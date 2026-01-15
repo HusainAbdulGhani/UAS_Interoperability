@@ -20,7 +20,7 @@ class ItemController extends Controller
             'category_id' => 'required|exists:categories,id',
             'item_code' => 'required|unique:items',
             'name' => 'required',
-            'stock' => 'required|integer',
+            'stock' => 'required|integer|min:0',
             'location' => 'required'
         ]);
     
@@ -34,7 +34,7 @@ class ItemController extends Controller
             'description' => 'Stok awal barang baru'
         ]);
     
-        return response()->json(['status' => 'success', 'data' => $item], 201);
+        return response()->json(['status' => 'success', 'message' => 'Barang berhasil ditambahkan', 'data' => $item], 201);
     }
 
     public function show($id) {
@@ -42,7 +42,7 @@ class ItemController extends Controller
         if (!$item) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Barang dengan ID ' . $id . ' tidak ditemukan di gudang.'
+                'message' => 'Barang dengan ID ' . $id . ' tidak ditemukan.'
             ], 404);
         }
         return response()->json(['status' => 'success', 'data' => $item]);
@@ -56,16 +56,29 @@ class ItemController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Barang tidak ditemukan'], 404);
         }
 
-        // Validasi data yang akan diupdate
         $validated = $request->validate([
             'category_id' => 'exists:categories,id',
             'item_code' => 'unique:items,item_code,' . $id,
             'name' => 'string',
-            'stock' => 'integer',
+            'stock' => 'integer|min:0',
             'location' => 'string'
         ]);
 
+        // SIMPAN STOK LAMA UNTUK PERHITUNGAN LOG
+        $oldStock = $item->stock;
+
         $item->update($validated);
+
+        //  CATAT BARANG MASUK / KELUAR
+        if (isset($validated['stock']) && $oldStock != $item->stock) {
+            $diff = $item->stock - $oldStock;
+            StockLog::create([
+                'item_id' => $item->id,
+                'type' => $diff > 0 ? 'in' : 'out',
+                'amount' => abs($diff),
+                'description' => 'Perubahan stok melalui update data'
+            ]);
+        }
 
         return response()->json(['status' => 'success', 'message' => 'Barang berhasil diperbarui', 'data' => $item]);
     }
@@ -73,13 +86,21 @@ class ItemController extends Controller
     public function destroy(string $id)
     {
         $item = Item::find($id);
-
+    
         if (!$item) {
             return response()->json(['status' => 'error', 'message' => 'Barang tidak ditemukan'], 404);
         }
-
+    
+        // CATAT LOG TERAKHIR SEBELUM DIHAPUS
+        StockLog::create([
+            'item_id' => $item->id,
+            'type' => 'out',
+            'amount' => $item->stock,
+            'description' => 'Barang dihapus dari sistem (Penghapusan Data)'
+        ]);
+    
         $item->delete();
-
-        return response()->json(['status' => 'success', 'message' => 'Barang berhasil dihapus']);
+    
+        return response()->json(['status' => 'success', 'message' => 'Barang berhasil dihapus dan riwayat dicatat']);
     }
 }
