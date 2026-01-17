@@ -1,16 +1,18 @@
 <?php
-
 namespace App\Http\Controllers\API;
-
 use App\Http\Controllers\Controller;
 use App\Models\StockLog;
+use Illuminate\Http\Request;
+class StockLogController extends Controller {
+    public function index(Request $request) {
+        $query = StockLog::with('item.category');
 
-class StockLogController extends Controller
-{
-    public function index()
-    {
-        // Mengambil log terbaru beserta data barangnya
-        $logs = StockLog::with('item')->latest()->get();
-        return response()->json(['status' => 'success', 'data' => $logs]);
+        if ($request->has('item_id')) {
+            $query->where('item_id', $request->input('item_id'));
+        }
+        return response()->json([
+            'status' => 'success', 
+            'data' => $query->get()
+        ]);
     }
 }
