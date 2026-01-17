@@ -1,143 +1,66 @@
 <?php
-
 namespace App\Http\Controllers\API;
-
 use App\Http\Controllers\Controller;
 use App\Models\Item;
 use App\Models\StockLog;
 use Illuminate\Http\Request;
 
-class ItemController extends Controller
-{
-    /**
-     * Menampilkan semua data barang beserta kategorinya.
-     */
+class ItemController extends Controller {
     public function index() {
-        $items = Item::with('category')->get();
-        return response()->json([
-            'status' => 'success',
-            'data' => $items
-        ]);
+        return response()->json(['status' => 'success', 'data' => Item::with('category')->get()]);
     }
 
-    /**
-     * Menyimpan barang baru dan mencatat log stok awal.
-     */
     public function store(Request $request) {
-        $validated = $request->validate([
+        $v = $this->validate($request, [
             'category_id' => 'required|exists:categories,id',
             'item_code' => 'required|unique:items',
             'name' => 'required',
             'stock' => 'required|integer|min:0',
             'location' => 'required'
         ]);
-    
-        $item = Item::create($validated);
-    
-        // Otomatis catat log barang masuk pertama kali
-        StockLog::create([
-            'item_id' => $item->id,
-            'type' => 'in',
-            'amount' => $item->stock,
-            'description' => 'Stok awal barang baru'
-        ]);
-    
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Barang berhasil ditambahkan',
-            'data' => $item
-        ], 201);
+        $item = Item::create($v);
+        StockLog::create(['item_id' => $item->id, 'type' => 'in', 'amount' => $item->stock, 'description' => 'Stok awal']);
+        return response()->json(['status' => 'success', 'data' => $item], 201);
     }
 
-    /**
-     * Menampilkan detail satu barang.
-     */
     public function show($id) {
         $item = Item::with('category')->find($id);
-        if (!$item) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Barang dengan ID ' . $id . ' tidak ditemukan.'
-            ], 404);
-        }
-        return response()->json([
-            'status' => 'success', 
-            'data' => $item
-        ]);
+        return $item ? response()->json(['status' => 'success', 'data' => $item]) : response()->json(['message' => 'Not Found'], 404);
     }
 
-    /**
-     * Memperbarui data barang dan mencatat log jika stok berubah.
-     */
-    public function update(Request $request, string $id)
-    {
+    public function update(Request $request, $id) {
         $item = Item::find($id);
-
-        if (!$item) {
-            return response()->json([
-                'status' => 'error', 
-                'message' => 'Barang tidak ditemukan'
-            ], 404);
-        }
-
-        $validated = $request->validate([
+        if (!$item) return response()->json(['message' => 'Not Found'], 404);
+        $v = $this->validate($request, [
             'category_id' => 'exists:categories,id',
             'item_code' => 'unique:items,item_code,' . $id,
-            'name' => 'string',
             'stock' => 'integer|min:0',
-            'location' => 'string'
         ]);
-
-        // Simpan stok lama untuk perhitungan log
         $oldStock = $item->stock;
-
-        $item->update($validated);
-
-        // LOGIKA RIWAYAT STOK: Jika nilai stok berubah, buat catatan log otomatis
-        if (isset($validated['stock']) && $oldStock != $item->stock) {
+        $item->update($v);
+        if (isset($v['stock']) && $oldStock != $item->stock) {
             $diff = $item->stock - $oldStock;
-            StockLog::create([
-                'item_id' => $item->id,
-                'type' => $diff > 0 ? 'in' : 'out',
-                'amount' => abs($diff),
-                'description' => 'Perubahan stok melalui update data'
-            ]);
+            StockLog::create(['item_id' => $item->id, 'type' => $diff > 0 ? 'in' : 'out', 'amount' => abs($diff), 'description' => 'Update stok']);
         }
-
-        return response()->json([
-            'status' => 'success', 
-            'message' => 'Barang berhasil diperbarui', 
-            'data' => $item
-        ]);
+        return response()->json(['status' => 'success', 'data' => $item]);
     }
 
-    /**
-     * Menghapus barang dari database (Soft Delete) dan mencatat riwayat terakhir.
-     */
-    public function destroy(string $id)
+    public function destroy($id)
     {
         $item = Item::find($id);
-    
+
         if (!$item) {
-            return response()->json([
-                'status' => 'error', 
-                'message' => 'Barang tidak ditemukan'
-            ], 404);
+            return response()->json(['message' => 'Barang tidak ditemukan'], 404);
         }
-    
-        // CATAT LOG TERAKHIR SEBELUM DIHAPUS (Audit Trail)
-        StockLog::create([
+        \App\Models\StockLog::create([
             'item_id' => $item->id,
             'type' => 'out',
-            'amount' => $item->stock,
-            'description' => 'Barang dihapus dari sistem (Penghapusan Data)'
+            'amount' => $item->stock, 
+            'description' => 'BARANG DIHAPUS: STOK HABIS & KOSONG'
         ]);
-    
+        $item->update(['stock' => 0]);
         $item->delete();
-
-        return response()->json([
-            'status' => 'success', 
-            'message' => 'Barang berhasil dihapus dan riwayat dicatat'
-        ]);
+    
+        return response()->json(['message' => 'Barang berhasil dihapus, stok tercatat kosong.'], 200);
     }
 }

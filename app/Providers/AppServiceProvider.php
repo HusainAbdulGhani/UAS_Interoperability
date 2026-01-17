@@ -2,23 +2,20 @@
 
 namespace App\Providers;
 
+use App\Models\User;
 use Illuminate\Support\ServiceProvider;
 
-class AppServiceProvider extends ServiceProvider
+class AuthServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
-    public function register(): void
-    {
-        //
-    }
+    public function register() {}
 
-    /**
-     * Bootstrap any application services.
-     */
-    public function boot(): void
+    public function boot()
     {
-        //
+        $this->app['auth']->viaRequest('api', function ($request) {
+            if ($request->header('Authorization')) {
+                $token = str_replace('Bearer ', '', $request->header('Authorization'));
+                return \App\Models\User::where('api_token', $token)->first();
+            }
+        });
     }
 }

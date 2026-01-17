@@ -1,46 +1,53 @@
 <?php
-
 namespace Database\Seeders;
-
 use App\Models\User;
 use App\Models\Category;
 use App\Models\Item;
+use App\Models\StockLog;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+use Faker\Factory as Faker;
 
-class DatabaseSeeder extends Seeder
-{
-    /**
-     * Seed the application's database.
-     */
-    public function run(): void
-    {
-        // 1. Buat User Admin untuk Login API
-        User::factory()->create([
+class DatabaseSeeder extends Seeder {
+    public function run() {
+        User::create([
             'name' => 'Admin Gudang',
             'email' => 'admin@gudang.com',
             'password' => Hash::make('password'),
+            'api_token' => Str::random(60),
         ]);
-
-        // 2.Data Kategori Dummy
         $elektronik = Category::create(['name' => 'Elektronik']);
         $furniture = Category::create(['name' => 'Furniture']);
+        $kategoriIds = [$elektronik->id, $furniture->id];
 
-        // 3.Data Barang Dummy
-        Item::create([
-            'category_id' => $elektronik->id,
-            'item_code' => 'BRG-001',
-            'name' => 'Laptop ASUS ROG',
-            'stock' => 15,
-            'location' => 'Gudang A-1'
-        ]);
+        $faker = Faker::create('id_ID');
 
-        Item::create([
-            'category_id' => $furniture->id,
-            'item_code' => 'BRG-002',
-            'name' => 'Kursi Kantor Ergotec',
-            'stock' => 20,
-            'location' => 'Gudang B-3'
-        ]);
+        $namaElektronik = ['Laptop', 'Smartphone', 'Monitor', 'Keyboard Mechanical', 'Mouse Wireless', 'Headset Gaming', 'Printer', 'Kabel HDMI', 'Powerbank', 'Speaker'];
+        $namaFurniture = ['Meja Kerja', 'Kursi Kantor', 'Lemari Pakaian', 'Rak Buku', 'Sofa Minimalis', 'Meja Makan', 'Tempat Tidur', 'Lampu Hias', 'Buffet TV', 'Kursi Lipat'];
+
+        for ($i = 1; $i <= 100; $i++) {
+
+            $isElektronik = $faker->boolean();
+            $kategoriId = $isElektronik ? $elektronik->id : $furniture->id;
+
+            $namaDasar = $isElektronik ? $faker->randomElement($namaElektronik) : $faker->randomElement($namaFurniture);
+            $namaLengkap = $namaDasar . ' ' . $faker->company();
+
+            $item = Item::create([
+                'category_id' => $kategoriId,
+                'item_code'   => 'BRG-' . str_pad($i, 3, '0', STR_PAD_LEFT),
+                'name'        => $namaLengkap,
+                'stock'       => $faker->numberBetween(1, 50),
+                'location'    => 'Gudang ' . $faker->randomElement(['A', 'B', 'C']) . '-' . $faker->numberBetween(1, 10)
+            ]);
+            
+            StockLog::create([
+                'item_id'     => $item->id,
+                'type'        => 'in',
+                'amount'      => $item->stock,
+                'description' => 'Stok barang ditambahkan'
+            ]);
+        }
     }
 }
