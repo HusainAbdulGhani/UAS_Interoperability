@@ -39,5 +39,15 @@ $router->group(['prefix' => 'api'], function () use ($router) {
         $router->get('/items/{id}', 'API\ItemController@show');      // Get 
         $router->put('/items/{id}', 'API\ItemController@update');    // Update
         $router->delete('/items/{id}', 'API\ItemController@destroy'); // Delete
+
+        $router->get('/categories', 'API\CategoriesController@index');          // Get all
+        $router->post('/categories', 'API\CategoriesController@store');         // Create
+        $router->get('/categories/{id}', 'API\CategoriesController@show');      // Get single
+        $router->put('/categories/{id}', 'API\CategoriesController@update');    // Update
+        $router->delete('/categories/{id}', 'API\CategoriesController@destroy'); // Delete
+
+        $router->get('/suppliers', 'API\SupplierController@index');          // Get all
+        $router->post('/suppliers', 'API\SupplierController@store');         // Create
+        $router->delete('/suppliers/{id}', 'API\SupplierController@destroy'); // Delete
     });
 });
